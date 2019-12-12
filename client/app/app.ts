@@ -7,10 +7,25 @@ import readline from 'readline'
 import ftp from 'basic-ftp';
 import amqp from 'amqplib/callback_api';
 
-import { environment } from '../environment/environment';
+export const environment = {
+  defaultFilepath: '/share',
+  // TODO Set public IP
+  clientResponseTimeout: 15000,
+
+  snsTopicArn: 'arn:aws:sns:eu-west-1:560058809970:file-sharing',
+  endpoint: 'http://127.0.0.1:3000/msg',
+  snsRegion: 'eu-west-1',
+
+  rabbitMQUserName: 'admin',
+  rabbitMQPassword: 'admin',
+  rabbitMQHost: '34.226.140.241',
+  rabbitMQPort: '5672',
+  rabbitMQQueueName: 'Files'
+};
 
 const app: express.Application = express();
-AWS.config.update({region: environment.sns.region});
+// TODO Refactor it
+AWS.config.update({region: environment.snsRegion});
 const sns = new AWS.SNS({});
 
 // TODO Wrap with mutex
@@ -34,9 +49,9 @@ async function confirmExistence(filename: string, uuid: string) {
     Message: JSON.stringify({
       uuid: uuid,
       filename: filename,
-      owner: environment.sns.endpoint
+      owner: environment.endpoint
     }),
-    TopicArn: environment.sns.topicArn
+    TopicArn: environment.snsTopicArn
   };
   return sns.publish(params).promise();
 }
@@ -55,14 +70,16 @@ async function saveFile(filename: string, content: any) {
 
 // Request file from other clients
 async function requestFile(filename: string, uuid: string) {
+  // DEBUG
+  return;
   let params = {
     Message: JSON.stringify({
       uuid: uuid,
       filename: filename,
       isRequest: true,
-      owner: environment.sns.endpoint
+      owner: environment.endpoint
     }),
-    TopicArn: environment.sns.topicArn
+    TopicArn: environment.snsTopicArn
   };
   return sns.publish(params).promise();
 }
@@ -71,8 +88,8 @@ async function requestFile(filename: string, uuid: string) {
 async function subscribeForSNSMessages() {
   const params = {
     Protocol: 'http',
-    TopicArn: environment.sns.topicArn,
-    Endpoint: environment.sns.endpoint
+    TopicArn: environment.snsTopicArn,
+    Endpoint: environment.endpoint
   };
   return new Promise<any>((resolve, reject) => {
     sns.subscribe(params, function(err, data) {
@@ -122,63 +139,65 @@ const rl = readline.createInterface({
 });
 let isStopped = false;
 
-
 rl.on("close", function() {
   isStopped = true;
   console.log("\nBYE BYE !!!");
   process.exit(0);
 });
 
-while (!isStopped) {
-  rl.question('What the file do you looking for?', (filename: string) => {
-    const reqUUID = uuid();
-    requestFile(filename, reqUUID).then(() => {
-      wantedFiles[reqUUID] = true;
-      setTimeout(() => {
-        if (wantedFiles[reqUUID]) {
-          try {
-            amqp.connect(`amqp://${environment.rabbitMQ.ip}:${environment.rabbitMQ.port}`,
-              function (error0: any, connection: any) {
-                if (error0) {
-                  throw error0;
+rl.question('What the file do you looking for?\n', (filename: string) => {
+  const reqUUID = uuid();
+  requestFile(filename, reqUUID).then(() => {
+    wantedFiles[reqUUID] = true;
+    setTimeout(() => {
+      if (wantedFiles[reqUUID]) {
+        try {
+          amqp.connect({
+              hostname: '34.226.140.241',
+              port: 5672,
+              username: 'admin',
+              password: 'admin'
+            },
+            function (error0: any, connection: any) {
+              if (error0) {
+                throw error0;
+              }
+              connection.createChannel(function (error1: any, channel: any) {
+                if (error1) {
+                  throw error1;
                 }
-                connection.createChannel(function (error1: any, channel: any) {
-                  if (error1) {
-                    throw error1;
-                  }
 
-                  let queue = environment.rabbitMQ.queueName;
-                  let msg = JSON.stringify({
-                    filename: filename,
-                    ip: environment.sns.endpoint,
-                    uuid: reqUUID
-                  });
-
-                  channel.assertQueue(queue, {
-                    durable: false
-                  });
-                  channel.sendToQueue(queue, Buffer.from(msg));
-
-                  console.log(" [x] Sent %s", msg);
+                let queue = environment.rabbitMQQueueName;
+                let msg = JSON.stringify({
+                  filename: filename,
+                  rabbitMQHost: environment.endpoint,
+                  uuid: reqUUID
                 });
+
+                channel.assertQueue(queue, {
+                  durable: false
+                });
+                channel.sendToQueue(queue, Buffer.from(msg));
+
+                console.log("Sent to server %s", msg);
               });
-          } catch (e) {
-            console.error('failed to connect to RabbitMQ', e);
-            return;
-          }
-          app.get('/', async function (req, res) {
-            const reqBody = JSON.parse(req.body);
-            if (reqBody.status) {
-              const client = new ftp.Client();
-              // TODO Think about port
-              await client.connect(req.ip, 3000);
-              const wrappedFilename = wrapFilename(filename);
-              await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
-              wantedFiles[reqUUID] = false;
-            }
-          });
+            });
+        } catch (e) {
+          console.error('failed to connect to RabbitMQ', e);
+          return;
         }
-      }, environment.clientResponseTimeout)
-    })
-  });
-}
+        app.get('/', async function (req, res) {
+          const reqBody = JSON.parse(req.body);
+          if (reqBody.status) {
+            const client = new ftp.Client();
+            // TODO Think about port
+            await client.connect(req.ip, 3000);
+            const wrappedFilename = wrapFilename(filename);
+            await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
+            wantedFiles[reqUUID] = false;
+          }
+        });
+      }
+    }, environment.clientResponseTimeout)
+  })
+});
