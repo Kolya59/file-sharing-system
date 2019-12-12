@@ -148,7 +148,11 @@ while (!isStopped) {
                   }
 
                   let queue = environment.rabbitMQ.queueName;
-                  let msg = filename;
+                  let msg = JSON.stringify({
+                    filename: filename,
+                    ip: environment.sns.endpoint,
+                    uuid: reqUUID
+                  });
 
                   channel.assertQueue(queue, {
                     durable: false
@@ -162,9 +166,17 @@ while (!isStopped) {
             console.error('failed to connect to RabbitMQ', e);
             return;
           }
-          // TODO Get file
-          // TODO Save file
-          wantedFiles[reqUUID] = false;
+          app.get('/', async function (req, res) {
+            const reqBody = JSON.parse(req.body);
+            if (reqBody.status) {
+              const client = new ftp.Client();
+              // TODO Think about port
+              await client.connect(req.ip, 3000);
+              const wrappedFilename = wrapFilename(filename);
+              await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
+              wantedFiles[reqUUID] = false;
+            }
+          });
         }
       }, environment.clientResponseTimeout)
     })
