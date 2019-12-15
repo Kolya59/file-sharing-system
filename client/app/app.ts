@@ -24,19 +24,7 @@ const environment = {
 };
 
 const app: express.Application = express();
-// AWS Middleware
-app.use((req, res, next) => {
-  let type = req.get('x-amz-sns-message-type');
-  if (type) {
-    req.headers['content-type'] = 'application/json';
-  }
-  if (type !== 'Notification') {
-    // @ts-ignore
-    req.isConfirmation = true;
-  }
-  next();
-});
-app.use(express.json());
+
 // Get environment variable
 AWS.config.update({region: environment.snsRegion});
 const sns = new AWS.SNS({});
