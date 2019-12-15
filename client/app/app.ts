@@ -283,9 +283,10 @@ if (process.env.REQ === 'true') {
   app.post('/', async function (req, res) {
     const reqBody = req.body;
     console.log("Handle server request", reqBody);
+    let ip = req.ip.split(':')[3];
     if (reqBody.status) {
       const client = new ftp({
-        host: req.ip,
+        host: ip,
         port: 21,
         user: 'ubuntu',
         password: ''
