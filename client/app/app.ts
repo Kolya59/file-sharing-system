@@ -90,24 +90,23 @@ async function subscribeForSNSMessages() {
     Endpoint: `http://${environment.endpoint}:3000/sub`
   };
   return new Promise<any>((resolve, reject) => {
-    sns.subscribe(params, function(err, data) {
-      if (!err) {
-        /*const confirmationParams = {
-          Token: 'STRING_VALUE',
-          TopicArn: environment.snsTopicArn,
-          AuthenticateOnUnsubscribe: 'false'
-        };
-        sns.confirmSubscription(confirmationParams, (err, data) => {
-          if (!err)
-            resolve(data);
-          else
-            reject(err);
-        });*/
-        resolve(data);
-      }
-      else
-        reject(err);
+    // Handle subscription
+    app.post('/sub', (req, res) => {
+      // DEBUG
+      console.log(JSON.parse(req.body));
+      const confirmationParams = {
+        Token: req.body.Token,
+        TopicArn: environment.snsTopicArn,
+        AuthenticateOnUnsubscribe: 'false'
+      };
+      sns.confirmSubscription(confirmationParams, (err, data) => {
+        if (!err)
+          resolve(data);
+        else
+          reject(err);
+      });
     });
+    sns.subscribe(params, (err, data) => { if (err) reject(err); });
   });
 }
 
@@ -132,12 +131,6 @@ app.get('/msg', async (req, res) => {
     await getFileFromClient(requestBody.filename, requestBody.owner);
     wantedFiles[requestBody.uuid] = false;
   }
-});
-
-// Handle subscription
-app.post('/sub', (req, res) => {
-  // DEBUG
-  console.log(JSON.parse(req.body));
 });
 
 // Listen requests
