@@ -27,6 +27,8 @@ const app: express.Application = express();
 app.use((req, res, next) => {
   if (req.get('x-amz-sns-message-type')) {
     req.headers['content-type'] = 'application/json';
+    // @ts-ignore
+    req.isConfirmation = true;
   }
   next();
 });
@@ -92,28 +94,41 @@ async function requestFile(filename: string, uuid: string) {
 // Listen all messages in SNS topic
 async function subscribeForSNSMessages() {
   return new Promise<any>((resolve, reject) => {
-    // Handle subscription
-    app.post('/sub', (req, res) => {
-      let reqBody = req.body;
-      console.log(reqBody);
-      console.log(reqBody.Token);
-      const confirmationParams = {
-        Token: reqBody.Token,
-        TopicArn: reqBody.TopicArn,
-        AuthenticateOnUnsubscribe: 'false'
-      };
-      sns.confirmSubscription(confirmationParams, (err, data) => {
-        if (!err)
-          resolve(data);
-        else
-          reject(err);
-      });
+    // Handle subscription confirmation request
+    app.post('/msg', async (req, res) => {
+      // @ts-ignore
+      if (req.isConfirmation) {
+        let reqBody = req.body;
+        console.log('Handled confirmation request', reqBody, reqBody.Token);
+        const confirmationParams = {
+          Token: reqBody.Token,
+          TopicArn: reqBody.TopicArn,
+          AuthenticateOnUnsubscribe: 'false'
+        };
+        sns.confirmSubscription(confirmationParams, (err, data) => {
+          if (!err)
+            resolve(data);
+          else
+            reject(err);
+        });
+      } else {
+        let reqBody = req.body;
+        console.log('Handled payload request', reqBody);
+        if (reqBody.isRequest && await checkFileExistence(reqBody.filename)) {
+          await confirmExistence(reqBody.filename, reqBody.uuid);
+        }
+        if (!reqBody.isRequest && wantedFiles[reqBody.uuid]) {
+          await getFileFromClient(reqBody.filename, reqBody.owner);
+          wantedFiles[reqBody.uuid] = false;
+        }
+      }
     });
-    // Listen requests
+    // Start server
     app.listen(3000, () => {
       console.log('App listening on port 3000!');
     });
 
+    // Request subscription
     const params = {
       Protocol: 'http',
       TopicArn: environment.snsTopicArn,
@@ -131,20 +146,6 @@ async function getFileFromClient(filename: string, sourceIp: string) {
   const wrappedFilename = wrapFilename(filename);
   await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
 }
-
-// Handle new msg
-app.get('/msg', async (req, res) => {
-  // DEBUG
-  console.log(req);
-  let requestBody = JSON.parse(req.body);
-  if (requestBody.isRequest && await checkFileExistence(requestBody.filename)) {
-    await confirmExistence(requestBody.filename, requestBody.uuid);
-  }
-  if (!requestBody.isRequest && wantedFiles[requestBody.uuid]) {
-    await getFileFromClient(requestBody.filename, requestBody.owner);
-    wantedFiles[requestBody.uuid] = false;
-  }
-});
 
 // DEBUG
 /*const rl = readline.createInterface({
