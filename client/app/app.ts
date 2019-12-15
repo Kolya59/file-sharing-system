@@ -111,7 +111,7 @@ async function subscribeForSNSMessages() {
     app.listen(3000, () => {
       console.log('App listening on port 3000!');
     });
-    sns.subscribe(params, (err, data) => { if (err) reject(err); });
+    // sns.subscribe(params, (err, data) => { if (err) reject(err); });
   });
 }
 
