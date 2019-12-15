@@ -91,6 +91,8 @@ async function requestFile(filename: string, uuid: string) {
 
 // Listen all messages in SNS topic
 async function subscribeForSNSMessages() {
+  // DEBUG
+  return;
   const params = {
     Protocol: 'http',
     TopicArn: environment.snsTopicArn,
