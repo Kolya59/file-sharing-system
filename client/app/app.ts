@@ -142,9 +142,7 @@ rl.on('close', () => {
 });
 
 rl.on('line', (line: string) => {
-  if (line === 'close') {
-    rl.close();
-  }
+  rl.close();
 });
 
 rl.question('What the file do you looking for?\n', (filename: string) => {
