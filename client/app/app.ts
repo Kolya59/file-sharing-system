@@ -109,16 +109,6 @@ async function subscribeForSNSMessages() {
   });
 }*/
 
-// Get file from another client
-async function getFileFromClient(filename: string, sourceIp: string) {
-  console.log(`Trying to get file ${filename} from client ${sourceIp}`);
-  const client = new ftp.Client();
-  // TODO Think about port
-  await client.connect(sourceIp, 22);
-  const wrappedFilename = wrapFilename(filename);
-  await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
-}
-
 // DEBUG
 /*const rl = readline.createInterface({
   input: process.stdin,
@@ -205,35 +195,6 @@ rl.on('line', (line: string) => {
 });
 
 rl.prompt();*/
-
-app.post('/msg', async (req, res) => {
-  let reqBody = req.body;
-  // @ts-ignore
-  if (req.isConfirmation) {
-    console.log('Handled confirmation request');
-    https.get(reqBody.SubscribeURL, (res) => { console.log('Subscribed to SNS', res); });
-  } else {
-    /*// DEBUG
-    console.log('Handled payload request', reqBody);*/
-    let msg = JSON.parse(reqBody.Message);
-    console.log('Msg is', msg);
-    try {
-      if (msg.isRequest && await checkFileExistence(msg.filename)) {
-        await confirmExistence(msg.filename, msg.uuid);
-      }
-      if (!msg.isRequest && wantedFiles[msg.uuid]) {
-        try {
-          await getFileFromClient(msg.filename, msg.owner);
-          wantedFiles[msg.uuid] = false;
-        } catch (e) {
-          console.error('Failed to get file from client', e);
-        }
-      }
-    } catch (e) {
-      console.error('Invalid request', reqBody);
-    }
-  }
-});
 
 // Start server
 app.listen(3000, () => {
