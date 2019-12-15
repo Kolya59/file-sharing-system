@@ -70,8 +70,6 @@ async function saveFile(filename: string, content: any) {
 
 // Request file from other clients
 async function requestFile(filename: string, uuid: string) {
-  // DEBUG
-  return;
   let params = {
     Message: JSON.stringify({
       uuid: uuid,
@@ -105,7 +103,7 @@ async function subscribeForSNSMessages() {
 async function getFileFromClient(filename: string, sourceIp: string) {
   const client = new ftp.Client();
   // TODO Think about port
-  await client.connect(sourceIp, 3000);
+  await client.connect(sourceIp, 22);
   const wrappedFilename = wrapFilename(filename);
   await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
 }
@@ -126,7 +124,7 @@ app.get('/msg', async function (req, res) {
 
 // Listen requests
 app.listen(3000, function () {
-  console.log('Example app listening on port 3000!');
+  console.log('App listening on port 3000!');
 });
 
 subscribeForSNSMessages()
@@ -137,10 +135,8 @@ const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
-let isStopped = false;
 
 rl.on("close", function() {
-  isStopped = true;
   console.log("\nBYE BYE !!!");
   process.exit(0);
 });
@@ -201,3 +197,5 @@ rl.question('What the file do you looking for?\n', (filename: string) => {
     }, environment.clientResponseTimeout)
   })
 });
+
+
