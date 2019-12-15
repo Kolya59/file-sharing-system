@@ -99,12 +99,10 @@ async function subscribeForSNSMessages() {
   return new Promise<any>((resolve, reject) => {
     // Handle subscription
     app.post('/sub', (req, res) => {
-      // DEBUG
       let reqBody = req.body;
-      console.log(reqBody, req.headers);
       const confirmationParams = {
         Token: reqBody.Token,
-        TopicArn: environment.snsTopicArn,
+        TopicArn: reqBody.TopicArn,
         AuthenticateOnUnsubscribe: 'false'
       };
       sns.confirmSubscription(confirmationParams, (err, data) => {
@@ -119,7 +117,7 @@ async function subscribeForSNSMessages() {
       console.log('App listening on port 3000!');
     });
     // DEBUG
-    // sns.subscribe(params, (err, data) => { if (err) reject(err); });
+    sns.subscribe(params, (err, data) => { if (err) reject(err); });
   });
 }
 
