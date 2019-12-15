@@ -6,7 +6,6 @@ import uuid from 'uuid/v4'
 import readline from 'readline'
 import ftp from 'basic-ftp';
 import amqp from 'amqplib/callback_api';
-import * as http from 'http';
 import * as https from 'https';
 
 const environment = {
@@ -68,6 +67,7 @@ async function confirmExistence(filename: string, uuid: string) {
     }),
     TopicArn: environment.snsTopicArn
   };
+  console.log('Try to confirm existence', params);
   return sns.publish(params).promise();
 }
 
@@ -112,6 +112,7 @@ async function subscribeForSNSMessages() {
 
 // Get file from another client
 async function getFileFromClient(filename: string, sourceIp: string) {
+  console.log(`Trying to get file ${filename} from client ${sourceIp}`);
   const client = new ftp.Client();
   // TODO Think about port
   await client.connect(sourceIp, 22);
@@ -237,7 +238,7 @@ if (process.env.REQ === 'true') {
   console.log('Try to download test');
   const reqUUID = uuid();
   const filename = 'test';
-// Try to get the file from other clients
+  // Try to get the file from other clients
   requestFile(filename, reqUUID).then((_) => {
     wantedFiles[reqUUID] = true;
     // Get file from server, if ttl was expired
