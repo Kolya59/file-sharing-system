@@ -133,6 +133,7 @@ const rl = readline.createInterface({
 });
 rl.setPrompt('>');
 rl.on('line', (line: string) => {
+  rl.pause();
   let split = line.split(' ');
   if (split.length != 2) {
     console.log('Sorry, I dont understand what you mean!!!');
@@ -207,6 +208,7 @@ rl.on('line', (line: string) => {
       console.log('Say what? I might have heard `' + line.trim() + '`');
       break;
   }
+  rl.resume();
   rl.prompt();
 }).on('close', function() {
   console.log("\nBYE BYE !!!");
