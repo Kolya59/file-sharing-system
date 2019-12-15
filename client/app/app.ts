@@ -24,7 +24,9 @@ export const environment = {
 };
 
 const app: express.Application = express();
-// TODO Refactor it
+// Get environment variable
+environment.endpoint = process.env.IP || environment.endpoint;
+
 AWS.config.update({region: environment.snsRegion});
 const sns = new AWS.SNS({});
 
