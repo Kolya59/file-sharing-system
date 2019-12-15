@@ -24,7 +24,7 @@ const environment = {
 };
 
 const app: express.Application = express();
-app.use(express.json());
+// app.use(express.json());
 // Get environment variable
 AWS.config.update({region: environment.snsRegion});
 const sns = new AWS.SNS({});
@@ -112,6 +112,7 @@ async function subscribeForSNSMessages() {
     app.listen(3000, () => {
       console.log('App listening on port 3000!');
     });
+    // DEBUG
     // sns.subscribe(params, (err, data) => { if (err) reject(err); });
   });
 }
