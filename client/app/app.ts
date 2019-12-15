@@ -24,7 +24,13 @@ const environment = {
 };
 
 const app: express.Application = express();
-// app.use(express.json());
+app.use((req, res, next) => {
+  if (req.get('x-amz-sns-message-type')) {
+    req.headers['content-type'] = 'application/json';
+  }
+  next();
+});
+app.use(express.json());
 // Get environment variable
 AWS.config.update({region: environment.snsRegion});
 const sns = new AWS.SNS({});
