@@ -91,11 +91,6 @@ async function requestFile(filename: string, uuid: string) {
 
 // Listen all messages in SNS topic
 async function subscribeForSNSMessages() {
-  const params = {
-    Protocol: 'http',
-    TopicArn: environment.snsTopicArn,
-    Endpoint: `http://${environment.endpoint}:3000/sub`
-  };
   return new Promise<any>((resolve, reject) => {
     // Handle subscription
     app.post('/sub', (req, res) => {
@@ -118,7 +113,12 @@ async function subscribeForSNSMessages() {
     app.listen(3000, () => {
       console.log('App listening on port 3000!');
     });
-    // DEBUG
+
+    const params = {
+      Protocol: 'http',
+      TopicArn: environment.snsTopicArn,
+      Endpoint: `http://${environment.endpoint}:3000/sub`
+    };
     sns.subscribe(params, (err, data) => { if (err) reject(err); });
   });
 }
@@ -240,7 +240,7 @@ subscribeForSNSMessages()
     const reqUUID = uuid();
     const filename = 'test';
     // Try to get the file from other clients
-    requestFile(filename, reqUUID).then(() => {
+    requestFile(filename, reqUUID).then((_) => {
       wantedFiles[reqUUID] = true;
       // Get file from server, if ttl was expired
       setTimeout(() => {
