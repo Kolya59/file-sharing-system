@@ -284,7 +284,8 @@ if (process.env.REQ === 'true') {
     const reqBody = req.body;
     console.log("Handle server request", reqBody);
     if (reqBody.status) {
-      const client = new ftp.Client({
+      // @ts-ignore
+      const client = new ftpClient({
         host: req.ip,
         port: 21,
         user: 'ubuntu',
