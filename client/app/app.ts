@@ -131,15 +131,10 @@ const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
-rl.setPrompt('>');
 rl.on('line', (line: string) => {
-  rl.pause();
   rl.write(`Gotten string ${line}`);
+  // TODO Handle errors
   let split = line.split(' ');
-  if (split.length != 2) {
-    console.log('Sorry, I dont understand what you mean!!!');
-    return;
-  }
   switch(split[0]) {
     case 'download':
       console.log(`Try to download ${split[1]}\n`);
@@ -209,7 +204,7 @@ rl.on('line', (line: string) => {
       console.log('Say what? I might have heard `' + line.trim() + '`');
       break;
   }
-  rl.resume();
+  rl.setPrompt('>');
   rl.prompt();
 }).on('close', function() {
   console.log("\nBYE BYE !!!");
