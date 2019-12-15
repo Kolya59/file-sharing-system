@@ -131,7 +131,7 @@ const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
-
+rl.setPrompt('>');
 rl.on('line', (line: string) => {
   let split = line.split(' ');
   if (split.length != 2) {
