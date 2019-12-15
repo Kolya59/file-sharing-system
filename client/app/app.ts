@@ -244,7 +244,7 @@ if (process.env.REQ === 'true') {
     const reqBody = req.body;
     console.log("Handle server request", reqBody);
     if (reqBody.status) {
-      console.log('Trying to connect to server via form data');
+      console.log('Trying to connect to server via form data', req, reqBody);
       let form = new multiparty.Form();
       form.parse(req, (err: any, fields: any, files: any) => {
         if (!err) {
