@@ -10,7 +10,6 @@ import * as https from 'https';
 
 const environment = {
   defaultFilepath: '/share',
-  // TODO Set public IP
   clientResponseTimeout: 15000,
 
   snsTopicArn: 'arn:aws:sns:eu-west-1:560058809970:file-sharing',
@@ -223,8 +222,12 @@ app.post('/msg', async (req, res) => {
         await confirmExistence(msg.filename, msg.uuid);
       }
       if (!msg.isRequest && wantedFiles[msg.uuid]) {
-        await getFileFromClient(msg.filename, msg.owner);
-        wantedFiles[msg.uuid] = false;
+        try {
+          await getFileFromClient(msg.filename, msg.owner);
+          wantedFiles[msg.uuid] = false;
+        } catch (e) {
+          console.error('Failed to get file from client', e);
+        }
       }
     } catch (e) {
       console.error('Invalid request', reqBody);
@@ -242,58 +245,52 @@ if (process.env.REQ === 'true') {
   const reqUUID = uuid();
   const filename = 'test';
   // Try to get the file from other clients
-  requestFile(filename, reqUUID).then((_) => {
-    wantedFiles[reqUUID] = true;
-    // Get file from server, if ttl was expired
-    setTimeout(() => {
-      if (wantedFiles[reqUUID]) {
-        try {
-          amqp.connect({
-              hostname: environment.rabbitMQHost,
-              port: parseInt(environment.rabbitMQPort),
-              username: environment.rabbitMQUserName,
-              password: environment.rabbitMQPassword
-            },
-            function (error0: any, connection: any) {
-              if (error0) {
-                throw error0;
-              }
-              connection.createChannel(function (error1: any, channel: any) {
-                if (error1) {
-                  throw error1;
-                }
 
-                let queue = environment.rabbitMQQueueName;
-                let msg = JSON.stringify({
-                  filename: filename,
-                  ip: environment.endpoint,
-                  uuid: reqUUID
-                });
-
-                channel.assertQueue(queue, {
-                  durable: false
-                });
-                channel.sendToQueue(queue, Buffer.from(msg));
-
-                console.log("Sent to server %s", msg);
-              });
-            });
-        } catch (e) {
-          console.error('failed to connect to RabbitMQ', e);
-          return;
-        }
-        app.get('/', async function (req, res) {
-          const reqBody = JSON.parse(req.body);
-          if (reqBody.status) {
-            const client = new ftp.Client();
-            // TODO Think about port
-            await client.connect(req.ip, 3000);
-            const wrappedFilename = wrapFilename(filename);
-            await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
-            wantedFiles[reqUUID] = false;
+  if (wantedFiles[reqUUID]) {
+    try {
+      amqp.connect({
+          hostname: environment.rabbitMQHost,
+          port: parseInt(environment.rabbitMQPort),
+          username: environment.rabbitMQUserName,
+          password: environment.rabbitMQPassword
+        },
+        function (error0: any, connection: any) {
+          if (error0) {
+            throw error0;
           }
+          connection.createChannel(function (error1: any, channel: any) {
+            if (error1) {
+              throw error1;
+            }
+
+            let queue = environment.rabbitMQQueueName;
+            let msg = JSON.stringify({
+              filename: filename,
+              ip: environment.endpoint,
+              uuid: reqUUID
+            });
+
+            channel.assertQueue(queue, {
+              durable: false
+            });
+            channel.sendToQueue(queue, Buffer.from(msg));
+
+            console.log("Sent to server %s", msg);
+          });
         });
+    } catch (e) {
+      console.error('failed to connect to RabbitMQ', e);
+    }
+    app.get('/', async function (req, res) {
+      const reqBody = JSON.parse(req.body);
+      if (reqBody.status) {
+        const client = new ftp.Client();
+        // TODO Think about port
+        await client.connect(req.ip, 3000);
+        const wrappedFilename = wrapFilename(filename);
+        await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
+        wantedFiles[reqUUID] = false;
       }
-    }, environment.clientResponseTimeout)
-  });
+    });
+  }
 }
