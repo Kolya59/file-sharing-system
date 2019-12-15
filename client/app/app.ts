@@ -285,10 +285,14 @@ if (process.env.REQ === 'true') {
     if (reqBody.status) {
       const client = new ftp.Client();
       // TODO Think about port
-      await client.connect(req.ip, 3000);
-      const wrappedFilename = wrapFilename(filename);
-      await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
-      wantedFiles[reqUUID] = false;
+      try {
+        await client.connect(req.ip, 3000);
+        const wrappedFilename = wrapFilename(filename);
+        await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
+        wantedFiles[reqUUID] = false;
+      } catch (e) {
+        console.error('Failed to get file from server', e);
+      }
     }
   });
 }
