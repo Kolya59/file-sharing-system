@@ -6,6 +6,7 @@ import uuid from 'uuid/v4'
 import readline from 'readline'
 import ftp from 'basic-ftp';
 import amqp from 'amqplib/callback_api';
+import * as http from 'http';
 
 const environment = {
   defaultFilepath: '/share',
@@ -99,17 +100,11 @@ async function subscribeForSNSMessages() {
       // @ts-ignore
       if (req.isConfirmation) {
         let reqBody = req.body;
-        console.log('Handled confirmation request', reqBody, reqBody.Token);
-        const confirmationParams = {
-          Token: reqBody.Token,
-          TopicArn: reqBody.TopicArn,
-          AuthenticateOnUnsubscribe: 'false'
-        };
-        sns.confirmSubscription(confirmationParams, (err, data) => {
-          if (!err)
-            resolve(data);
-          else
-            reject(err);
+        console.log('Handled confirmation request', reqBody);
+        http.get({
+          hostname: reqBody.SubscribeURL
+        }, (res) => {
+          resolve(res);
         });
       } else {
         let reqBody = req.body;
@@ -132,7 +127,7 @@ async function subscribeForSNSMessages() {
     const params = {
       Protocol: 'http',
       TopicArn: environment.snsTopicArn,
-      Endpoint: `http://${environment.endpoint}:3000/sub`
+      Endpoint: `http://${environment.endpoint}:3000/msg`
     };
     // sns.subscribe(params, (err, data) => { if (err) reject(err); });
   });
