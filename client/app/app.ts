@@ -136,9 +136,15 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
-rl.on("close", function() {
+rl.on('close', () => {
   console.log("\nBYE BYE !!!");
   process.exit(0);
+});
+
+rl.on('line', (line: string) => {
+  if (line === 'close') {
+    rl.close();
+  }
 });
 
 rl.question('What the file do you looking for?\n', (filename: string) => {
@@ -195,7 +201,8 @@ rl.question('What the file do you looking for?\n', (filename: string) => {
         });
       }
     }, environment.clientResponseTimeout)
-  })
+  });
+  rl.close();
 });
 
 
