@@ -170,7 +170,7 @@ rl.question('What the file do you looking for?\n', (filename: string) => {
                 let queue = environment.rabbitMQQueueName;
                 let msg = JSON.stringify({
                   filename: filename,
-                  rabbitMQHost: environment.endpoint,
+                  ip: environment.endpoint,
                   uuid: reqUUID
                 });
 
