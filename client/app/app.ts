@@ -97,32 +97,7 @@ async function requestFile(filename: string, uuid: string) {
 async function subscribeForSNSMessages() {
   return new Promise<any>((resolve, reject) => {
     // Handle subscription confirmation request
-    app.post('/msg', async (req, res) => {
-      let reqBody = req.body;
-      // @ts-ignore
-      if (req.isConfirmation) {
-        console.log('Handled confirmation request');
-        https.get(reqBody.SubscribeURL, (res) => { resolve(res); });
-      } else {
-        console.log('Handled payload request', reqBody);
-        try {
-          if (reqBody.isRequest && await checkFileExistence(reqBody.filename)) {
-            await confirmExistence(reqBody.filename, reqBody.uuid);
-          }
-          if (!reqBody.isRequest && wantedFiles[reqBody.uuid]) {
-            await getFileFromClient(reqBody.filename, reqBody.owner);
-            wantedFiles[reqBody.uuid] = false;
-          }
-        } catch (e) {
-          console.error('Invalid request', reqBody);
-        }
-      }
-    });
 
-    // Start server
-    app.listen(3000, () => {
-      console.log('App listening on port 3000!');
-    });
     /*// Request subscription
     const params = {
       Protocol: 'http',
@@ -229,69 +204,90 @@ rl.on('line', (line: string) => {
 
 rl.prompt();*/
 
-subscribeForSNSMessages()
-  .then((data) => {
-    console.log('Successfully subscribed for SNS', data);
-    console.log('Try to download test');
-    const reqUUID = uuid();
-    const filename = 'test';
-    // Try to get the file from other clients
-    requestFile(filename, reqUUID).then((_) => {
-      wantedFiles[reqUUID] = true;
-      // Get file from server, if ttl was expired
-      setTimeout(() => {
-        if (wantedFiles[reqUUID]) {
-          try {
-            amqp.connect({
-                hostname: environment.rabbitMQHost,
-                port: parseInt(environment.rabbitMQPort),
-                username: environment.rabbitMQUserName,
-                password: environment.rabbitMQPassword
-              },
-              function (error0: any, connection: any) {
-                if (error0) {
-                  throw error0;
+app.post('/msg', async (req, res) => {
+  let reqBody = req.body;
+  // @ts-ignore
+  if (req.isConfirmation) {
+    console.log('Handled confirmation request');
+    https.get(reqBody.SubscribeURL, (res) => { console.log('Subscribed to SNS', res); });
+  } else {
+    console.log('Handled payload request', reqBody);
+    try {
+      if (reqBody.isRequest && await checkFileExistence(reqBody.filename)) {
+        await confirmExistence(reqBody.filename, reqBody.uuid);
+      }
+      if (!reqBody.isRequest && wantedFiles[reqBody.uuid]) {
+        await getFileFromClient(reqBody.filename, reqBody.owner);
+        wantedFiles[reqBody.uuid] = false;
+      }
+    } catch (e) {
+      console.error('Invalid request', reqBody);
+    }
+  }
+});
+
+// Start server
+app.listen(3000, () => {
+  console.log('App listening on port 3000!');
+});
+
+if (process.env.REQ === 'true') {
+  console.log('Try to download test');
+  const reqUUID = uuid();
+  const filename = 'test';
+// Try to get the file from other clients
+  requestFile(filename, reqUUID).then((_) => {
+    wantedFiles[reqUUID] = true;
+    // Get file from server, if ttl was expired
+    setTimeout(() => {
+      if (wantedFiles[reqUUID]) {
+        try {
+          amqp.connect({
+              hostname: environment.rabbitMQHost,
+              port: parseInt(environment.rabbitMQPort),
+              username: environment.rabbitMQUserName,
+              password: environment.rabbitMQPassword
+            },
+            function (error0: any, connection: any) {
+              if (error0) {
+                throw error0;
+              }
+              connection.createChannel(function (error1: any, channel: any) {
+                if (error1) {
+                  throw error1;
                 }
-                connection.createChannel(function (error1: any, channel: any) {
-                  if (error1) {
-                    throw error1;
-                  }
 
-                  let queue = environment.rabbitMQQueueName;
-                  let msg = JSON.stringify({
-                    filename: filename,
-                    ip: environment.endpoint,
-                    uuid: reqUUID
-                  });
-
-                  channel.assertQueue(queue, {
-                    durable: false
-                  });
-                  channel.sendToQueue(queue, Buffer.from(msg));
-
-                  console.log("Sent to server %s", msg);
+                let queue = environment.rabbitMQQueueName;
+                let msg = JSON.stringify({
+                  filename: filename,
+                  ip: environment.endpoint,
+                  uuid: reqUUID
                 });
+
+                channel.assertQueue(queue, {
+                  durable: false
+                });
+                channel.sendToQueue(queue, Buffer.from(msg));
+
+                console.log("Sent to server %s", msg);
               });
-          } catch (e) {
-            console.error('failed to connect to RabbitMQ', e);
-            return;
-          }
-          app.get('/', async function (req, res) {
-            const reqBody = JSON.parse(req.body);
-            if (reqBody.status) {
-              const client = new ftp.Client();
-              // TODO Think about port
-              await client.connect(req.ip, 3000);
-              const wrappedFilename = wrapFilename(filename);
-              await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
-              wantedFiles[reqUUID] = false;
-            }
-          });
+            });
+        } catch (e) {
+          console.error('failed to connect to RabbitMQ', e);
+          return;
         }
-      }, environment.clientResponseTimeout)
-    });
-  })
-  .catch((err: any) => {
-    console.error('Failed to subscribe for SNS', err);
-    process.exit(1);
+        app.get('/', async function (req, res) {
+          const reqBody = JSON.parse(req.body);
+          if (reqBody.status) {
+            const client = new ftp.Client();
+            // TODO Think about port
+            await client.connect(req.ip, 3000);
+            const wrappedFilename = wrapFilename(filename);
+            await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
+            wantedFiles[reqUUID] = false;
+          }
+        });
+      }
+    }, environment.clientResponseTimeout)
   });
+}
