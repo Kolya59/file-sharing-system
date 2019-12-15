@@ -7,6 +7,7 @@ import readline from 'readline'
 import ftp from 'basic-ftp';
 import amqp from 'amqplib/callback_api';
 import * as http from 'http';
+import * as https from 'https';
 
 const environment = {
   defaultFilepath: '/share',
@@ -101,7 +102,7 @@ async function subscribeForSNSMessages() {
       if (req.isConfirmation) {
         let reqBody = req.body;
         console.log('Handled confirmation request', reqBody);
-        http.get(reqBody.SubscribeURL, (res) => {
+        https.get(reqBody.SubscribeURL, (res) => {
           resolve(res);
         });
       } else {
