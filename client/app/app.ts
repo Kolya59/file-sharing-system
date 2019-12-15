@@ -290,6 +290,7 @@ if (process.env.REQ === 'true') {
         user: 'ubuntu',
         password: ''
       });
+      console.log('Trying to connect to server', client);
       // TODO Think about port
       try {
         const wrappedFilename = wrapFilename(filename);
