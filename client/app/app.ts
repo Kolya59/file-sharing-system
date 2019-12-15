@@ -87,12 +87,23 @@ async function subscribeForSNSMessages() {
   const params = {
     Protocol: 'http',
     TopicArn: environment.snsTopicArn,
-    Endpoint: `http://${environment.endpoint}:3000/msg`
+    Endpoint: `http://${environment.endpoint}:3000/sub`
   };
   return new Promise<any>((resolve, reject) => {
     sns.subscribe(params, function(err, data) {
-      if (!err)
-        resolve(data);
+      if (!err) {
+        const confirmationParams = {
+          Token: 'STRING_VALUE',
+          TopicArn: environment.snsTopicArn,
+          AuthenticateOnUnsubscribe: 'false'
+        };
+        sns.confirmSubscription(confirmationParams, (err, data) => {
+          if (!err)
+            resolve(data);
+          else
+            reject(err);
+        });
+      }
       else
         reject(err);
     });
@@ -109,7 +120,7 @@ async function getFileFromClient(filename: string, sourceIp: string) {
 }
 
 // Handle new msg
-app.get('/msg', async function (req, res) {
+app.get('/msg', async (req, res) => {
   // DEBUG
   console.log(req);
   let requestBody = JSON.parse(req.body);
@@ -122,8 +133,14 @@ app.get('/msg', async function (req, res) {
   }
 });
 
+// Handle subscription
+app.get('/sub', async (req, res) => {
+  // DEBUG
+  console.log(req);
+});
+
 // Listen requests
-app.listen(3000, function () {
+app.listen(3000, () => {
   console.log('App listening on port 3000!');
 });
 
