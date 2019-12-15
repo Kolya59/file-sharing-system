@@ -231,17 +231,15 @@ if (process.env.REQ === 'true') {
   app.post('/', async function (req, res) {
     const reqBody = req.body;
     console.log("Handle server request", reqBody);
-    if (reqBody.status) {
-      console.log('Trying to connect to server via form data', req);
-      let form = new multiparty.Form();
-      form.parse(req, (err: any, fields: any, files: any) => {
-        if (!err) {
-          console.log('Fields is', fields);
-          console.log('Files is', files);
-        } else {
-          console.error('Failed to parse request', err)
-        }
-      });
-    }
+    console.log('Trying to connect to server via form data', req);
+    let form = new multiparty.Form();
+    form.parse(req, (err: any, fields: any, files: any) => {
+      if (!err) {
+        console.log('Fields is', fields);
+        console.log('Files is', files);
+      } else {
+        console.error('Failed to parse request', err)
+      }
+    });
   });
 }
