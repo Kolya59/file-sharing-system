@@ -140,6 +140,7 @@ rl.on('line', (line: string) => {
   }
   switch(split[0]) {
     case 'download':
+      console.log(`Try to download ${split[1]}\n`);
       const reqUUID = uuid();
       requestFile(split[1], reqUUID).then(() => {
         wantedFiles[reqUUID] = true;
@@ -197,6 +198,10 @@ rl.on('line', (line: string) => {
       break;
     case 'set-ip':
       environment.endpoint = split[1];
+      console.log(`IP is ${split[1]}\n`);
+      break;
+    case 'close':
+      rl.close();
       break;
     default:
       console.log('Say what? I might have heard `' + line.trim() + '`');
