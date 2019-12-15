@@ -135,7 +135,7 @@ app.get('/msg', async (req, res) => {
 });
 
 // Handle subscription
-app.get('/sub', async (req, res) => {
+app.post('/sub', (req, res) => {
   // DEBUG
   console.log(req);
 });
