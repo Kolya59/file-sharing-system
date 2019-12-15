@@ -87,7 +87,7 @@ async function subscribeForSNSMessages() {
   const params = {
     Protocol: 'http',
     TopicArn: environment.snsTopicArn,
-    Endpoint: `http://${environment.endpoint}`
+    Endpoint: `http://${environment.endpoint}:3000/msg`
   };
   return new Promise<any>((resolve, reject) => {
     sns.subscribe(params, function(err, data) {
