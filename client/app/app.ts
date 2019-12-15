@@ -216,6 +216,7 @@ app.post('/msg', async (req, res) => {
   } else {
     console.log('Handled payload request', reqBody);
     let msg = JSON.parse(reqBody.Message);
+    console.log('Msg is', msg);
     try {
       if (msg.isRequest && await checkFileExistence(msg.filename)) {
         await confirmExistence(msg.filename, msg.uuid);
