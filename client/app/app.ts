@@ -215,13 +215,14 @@ app.post('/msg', async (req, res) => {
     https.get(reqBody.SubscribeURL, (res) => { console.log('Subscribed to SNS', res); });
   } else {
     console.log('Handled payload request', reqBody);
+    let msg = JSON.parse(reqBody.Message);
     try {
-      if (reqBody.isRequest && await checkFileExistence(reqBody.filename)) {
-        await confirmExistence(reqBody.filename, reqBody.uuid);
+      if (msg.isRequest && await checkFileExistence(msg.filename)) {
+        await confirmExistence(msg.filename, msg.uuid);
       }
-      if (!reqBody.isRequest && wantedFiles[reqBody.uuid]) {
-        await getFileFromClient(reqBody.filename, reqBody.owner);
-        wantedFiles[reqBody.uuid] = false;
+      if (!msg.isRequest && wantedFiles[msg.uuid]) {
+        await getFileFromClient(msg.filename, msg.owner);
+        wantedFiles[msg.uuid] = false;
       }
     } catch (e) {
       console.error('Invalid request', reqBody);
