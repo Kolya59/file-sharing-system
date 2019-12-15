@@ -92,7 +92,7 @@ async function subscribeForSNSMessages() {
   return new Promise<any>((resolve, reject) => {
     sns.subscribe(params, function(err, data) {
       if (!err) {
-        const confirmationParams = {
+        /*const confirmationParams = {
           Token: 'STRING_VALUE',
           TopicArn: environment.snsTopicArn,
           AuthenticateOnUnsubscribe: 'false'
@@ -102,7 +102,8 @@ async function subscribeForSNSMessages() {
             resolve(data);
           else
             reject(err);
-        });
+        });*/
+        resolve(data);
       }
       else
         reject(err);
