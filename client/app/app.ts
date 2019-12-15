@@ -215,8 +215,9 @@ rl.on('line', (line: string) => {
 rl.prompt();*/
 
 subscribeForSNSMessages()
-  .then(() => {
-    console.log(`Try to download test`);
+  .then((data) => {
+    console.log('Successfully subscribed for SNS', data);
+    console.log('Try to download test');
     const reqUUID = uuid();
     const filename = 'test';
     // Try to get the file from other clients
