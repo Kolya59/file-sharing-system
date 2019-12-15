@@ -284,15 +284,17 @@ if (process.env.REQ === 'true') {
     console.log("Handle server request", reqBody);
     if (reqBody.status) {
       console.log('Trying to connect to server via ftp');
-      const client = new ftp.Client();
+      const client = new ftp.Client(15000);
       // TODO Think about port
       try {
         await client.connect(req.ip.split(':')[3], 21);
         const wrappedFilename = wrapFilename(filename);
         await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
+        client.close();
         wantedFiles[reqUUID] = false;
       } catch (e) {
         console.error('Failed to get file from server', e);
+        client.close();
       }
     }
   });
