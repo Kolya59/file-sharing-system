@@ -106,6 +106,10 @@ async function subscribeForSNSMessages() {
           reject(err);
       });
     });
+    // Listen requests
+    app.listen(3000, () => {
+      console.log('App listening on port 3000!');
+    });
     sns.subscribe(params, (err, data) => { if (err) reject(err); });
   });
 }
@@ -131,11 +135,6 @@ app.get('/msg', async (req, res) => {
     await getFileFromClient(requestBody.filename, requestBody.owner);
     wantedFiles[requestBody.uuid] = false;
   }
-});
-
-// Listen requests
-app.listen(3000, () => {
-  console.log('App listening on port 3000!');
 });
 
 // DEBUG
@@ -224,8 +223,6 @@ rl.on('line', (line: string) => {
 });
 
 rl.prompt();*/
-
-console.log('Environment is', environment);
 
 subscribeForSNSMessages()
   .then((data) => {
