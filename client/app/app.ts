@@ -214,7 +214,8 @@ app.post('/msg', async (req, res) => {
     console.log('Handled confirmation request');
     https.get(reqBody.SubscribeURL, (res) => { console.log('Subscribed to SNS', res); });
   } else {
-    console.log('Handled payload request', reqBody);
+    /*// DEBUG
+    console.log('Handled payload request', reqBody);*/
     let msg = JSON.parse(reqBody.Message);
     console.log('Msg is', msg);
     try {
