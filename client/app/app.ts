@@ -195,7 +195,7 @@ rl.on('line', (line: string) => {
         }, environment.clientResponseTimeout)
       });
       break;
-    case 'set ip':
+    case 'set-ip':
       environment.endpoint = split[1];
       break;
     default:
