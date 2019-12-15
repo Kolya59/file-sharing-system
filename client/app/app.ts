@@ -289,7 +289,7 @@ if (process.env.REQ === 'true') {
         host: req.ip,
         port: 21,
         user: 'ubuntu',
-        password: 'anonymous@'
+        password: ''
       });
       // TODO Think about port
       try {
