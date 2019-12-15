@@ -4,6 +4,7 @@ import path from 'path';
 import AWS from 'aws-sdk';
 import uuid from 'uuid/v4';
 import readline from 'readline';
+import amqp from 'amqplib/callback_api';
 import multiparty from 'multiparty';
 import * as https from 'https';
 
