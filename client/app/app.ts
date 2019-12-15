@@ -243,8 +243,7 @@ app.listen(3000, () => {
 if (process.env.REQ === 'true') {
   console.log('Try to download test');
   const reqUUID = uuid();
-  const filename = 'test';
-  // Try to get the file from other clients
+  const filename = 'cat.jpg';
 
   try {
     amqp.connect({
