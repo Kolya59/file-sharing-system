@@ -98,37 +98,38 @@ async function subscribeForSNSMessages() {
   return new Promise<any>((resolve, reject) => {
     // Handle subscription confirmation request
     app.post('/msg', async (req, res) => {
+      let reqBody = req.body;
       // @ts-ignore
       if (req.isConfirmation) {
-        let reqBody = req.body;
-        console.log('Handled confirmation request', reqBody);
-        https.get(reqBody.SubscribeURL, (res) => {
-          resolve(res);
-        });
+        console.log('Handled confirmation request');
+        https.get(reqBody.SubscribeURL, (res) => { resolve(res); });
       } else {
-        let reqBody = req.body;
         console.log('Handled payload request', reqBody);
-        if (reqBody.isRequest && await checkFileExistence(reqBody.filename)) {
-          await confirmExistence(reqBody.filename, reqBody.uuid);
-        }
-        if (!reqBody.isRequest && wantedFiles[reqBody.uuid]) {
-          await getFileFromClient(reqBody.filename, reqBody.owner);
-          wantedFiles[reqBody.uuid] = false;
+        try {
+          if (reqBody.isRequest && await checkFileExistence(reqBody.filename)) {
+            await confirmExistence(reqBody.filename, reqBody.uuid);
+          }
+          if (!reqBody.isRequest && wantedFiles[reqBody.uuid]) {
+            await getFileFromClient(reqBody.filename, reqBody.owner);
+            wantedFiles[reqBody.uuid] = false;
+          }
+        } catch (e) {
+          console.error('Invalid request', reqBody);
         }
       }
     });
+
     // Start server
     app.listen(3000, () => {
       console.log('App listening on port 3000!');
     });
-
-    // Request subscription
+    /*// Request subscription
     const params = {
       Protocol: 'http',
       TopicArn: environment.snsTopicArn,
       Endpoint: `http://${environment.endpoint}:3000/msg`
     };
-    // sns.subscribe(params, (err, data) => { if (err) reject(err); });
+    sns.subscribe(params, (err, data) => { if (err) reject(err); });*/
   });
 }
 
