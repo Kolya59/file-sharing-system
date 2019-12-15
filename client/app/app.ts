@@ -26,9 +26,13 @@ const environment = {
 };
 
 const app: express.Application = express();
+// AWS Middleware
 app.use((req, res, next) => {
-  if (req.get('x-amz-sns-message-type')) {
+  let type = req.get('x-amz-sns-message-type');
+  if (type) {
     req.headers['content-type'] = 'application/json';
+  }
+  if (type !== 'Notification') {
     // @ts-ignore
     req.isConfirmation = true;
   }
@@ -93,20 +97,18 @@ async function requestFile(filename: string, uuid: string) {
   return sns.publish(params).promise();
 }
 
-// Listen all messages in SNS topic
+/*// Listen all messages in SNS topic
 async function subscribeForSNSMessages() {
   return new Promise<any>((resolve, reject) => {
-    // Handle subscription confirmation request
-
-    /*// Request subscription
+    // Request subscription
     const params = {
       Protocol: 'http',
       TopicArn: environment.snsTopicArn,
       Endpoint: `http://${environment.endpoint}:3000/msg`
     };
-    sns.subscribe(params, (err, data) => { if (err) reject(err); });*/
+    sns.subscribe(params, (err, data) => { if (err) reject(err); });
   });
-}
+}*/
 
 // Get file from another client
 async function getFileFromClient(filename: string, sourceIp: string) {
