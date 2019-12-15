@@ -214,6 +214,8 @@ rl.on('line', (line: string) => {
 
 rl.prompt();*/
 
+console.log('Environment is', environment);
+
 subscribeForSNSMessages()
   .then((data) => {
     console.log('Successfully subscribed for SNS', data);
