@@ -7,13 +7,13 @@ import readline from 'readline'
 import ftp from 'basic-ftp';
 import amqp from 'amqplib/callback_api';
 
-export const environment = {
+const environment = {
   defaultFilepath: '/share',
   // TODO Set public IP
   clientResponseTimeout: 15000,
 
   snsTopicArn: 'arn:aws:sns:eu-west-1:560058809970:file-sharing',
-  endpoint: 'http://127.0.0.1:3000/msg',
+  endpoint: process.env.IP,
   snsRegion: 'eu-west-1',
 
   rabbitMQUserName: 'admin',
@@ -25,8 +25,6 @@ export const environment = {
 
 const app: express.Application = express();
 // Get environment variable
-environment.endpoint = process.env.IP || environment.endpoint;
-
 AWS.config.update({region: environment.snsRegion});
 const sns = new AWS.SNS({});
 
@@ -136,6 +134,7 @@ const rl = readline.createInterface({
 rl.setPrompt('>');
 rl.on('line', (line: string) => {
   rl.pause();
+  rl.write(`Gotten string ${line}`);
   let split = line.split(' ');
   if (split.length != 2) {
     console.log('Sorry, I dont understand what you mean!!!');
