@@ -93,7 +93,7 @@ async function subscribeForSNSMessages() {
     // Handle subscription
     app.post('/sub', (req, res) => {
       // DEBUG
-      console.log(JSON.parse(req.body));
+      console.log(express.json(req.body));
       const confirmationParams = {
         Token: req.body.Token,
         TopicArn: environment.snsTopicArn,
