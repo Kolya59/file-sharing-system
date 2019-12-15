@@ -132,76 +132,80 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
-rl.question('What the your external IP?\n', (ip: string) => {
-  environment.endpoint = ip;
-  subscribeForSNSMessages()
-    .then((res: any) => console.log(res))
-    .catch((e: any) => console.error(e));
-
-  rl.question('What the file do you looking for?\n', (filename: string) => {
-    const reqUUID = uuid();
-    requestFile(filename, reqUUID).then(() => {
-      wantedFiles[reqUUID] = true;
-      setTimeout(() => {
-        if (wantedFiles[reqUUID]) {
-          try {
-            amqp.connect({
-                hostname: '34.226.140.241',
-                port: 5672,
-                username: 'admin',
-                password: 'admin'
-              },
-              function (error0: any, connection: any) {
-                if (error0) {
-                  throw error0;
-                }
-                connection.createChannel(function (error1: any, channel: any) {
-                  if (error1) {
-                    throw error1;
+rl.on('line', (line: string) => {
+  let split = line.split(' ');
+  if (split.length != 2) {
+    console.log('Sorry, I dont understand what you mean!!!');
+    return;
+  }
+  switch(split[0]) {
+    case 'download':
+      const reqUUID = uuid();
+      requestFile(split[1], reqUUID).then(() => {
+        wantedFiles[reqUUID] = true;
+        setTimeout(() => {
+          if (wantedFiles[reqUUID]) {
+            try {
+              amqp.connect({
+                  hostname: '34.226.140.241',
+                  port: 5672,
+                  username: 'admin',
+                  password: 'admin'
+                },
+                function (error0: any, connection: any) {
+                  if (error0) {
+                    throw error0;
                   }
+                  connection.createChannel(function (error1: any, channel: any) {
+                    if (error1) {
+                      throw error1;
+                    }
 
-                  let queue = environment.rabbitMQQueueName;
-                  let msg = JSON.stringify({
-                    filename: filename,
-                    ip: environment.endpoint,
-                    uuid: reqUUID
+                    let queue = environment.rabbitMQQueueName;
+                    let msg = JSON.stringify({
+                      filename: split[1],
+                      ip: environment.endpoint,
+                      uuid: reqUUID
+                    });
+
+                    channel.assertQueue(queue, {
+                      durable: false
+                    });
+                    channel.sendToQueue(queue, Buffer.from(msg));
+
+                    console.log("Sent to server %s", msg);
                   });
-
-                  channel.assertQueue(queue, {
-                    durable: false
-                  });
-                  channel.sendToQueue(queue, Buffer.from(msg));
-
-                  console.log("Sent to server %s", msg);
                 });
-              });
-          } catch (e) {
-            console.error('failed to connect to RabbitMQ', e);
-            return;
-          }
-          app.get('/', async function (req, res) {
-            const reqBody = JSON.parse(req.body);
-            if (reqBody.status) {
-              const client = new ftp.Client();
-              // TODO Think about port
-              await client.connect(req.ip, 3000);
-              const wrappedFilename = wrapFilename(filename);
-              await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
-              wantedFiles[reqUUID] = false;
+            } catch (e) {
+              console.error('failed to connect to RabbitMQ', e);
+              return;
             }
-          });
-        }
-      }, environment.clientResponseTimeout)
-    });
-    rl.close();
-  });
-});
-
-rl.on('close', () => {
+            app.get('/', async function (req, res) {
+              const reqBody = JSON.parse(req.body);
+              if (reqBody.status) {
+                const client = new ftp.Client();
+                // TODO Think about port
+                await client.connect(req.ip, 3000);
+                const wrappedFilename = wrapFilename(split[1]);
+                await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
+                wantedFiles[reqUUID] = false;
+              }
+            });
+          }
+        }, environment.clientResponseTimeout)
+      });
+      break;
+    case 'set ip':
+      environment.endpoint = split[1];
+      break;
+    default:
+      console.log('Say what? I might have heard `' + line.trim() + '`');
+      break;
+  }
+  rl.prompt();
+}).on('close', function() {
   console.log("\nBYE BYE !!!");
   process.exit(0);
 });
 
-rl.on('line', (line: string) => {
-  rl.close();
-});
+rl.prompt();
