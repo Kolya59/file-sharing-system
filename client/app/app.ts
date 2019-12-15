@@ -2,10 +2,9 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import AWS from 'aws-sdk';
-import uuid from 'uuid/v4'
-import readline from 'readline'
-import * as ftp from 'basic-ftp';
-import amqp from 'amqplib/callback_api';
+import uuid from 'uuid/v4';
+import readline from 'readline';
+import multiparty from 'multiparty';
 import * as https from 'https';
 
 const environment = {
@@ -284,24 +283,15 @@ if (process.env.REQ === 'true') {
     console.log("Handle server request", reqBody);
     if (reqBody.status) {
       console.log('Trying to connect to server via ftp');
-      let client = new ftp.Client(15000);
-      client.ftp.verbose = true;
-      // TODO Think about port
-      try {
-        await client.access({
-          host: req.ip.split(':')[3],
-          user: 'ubuntu',
-          password: '',
-          secure: false
-        });
-        const wrappedFilename = wrapFilename(filename);
-        await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
-        client.close();
-        wantedFiles[reqUUID] = false;
-      } catch (e) {
-        console.error('Failed to get file from server', e);
-        client.close();
-      }
+      let form = new multiparty.Form();
+      form.parse(req, (err: any, fields: any, files: any) => {
+        if (!err) {
+          console.log('Fields is', fields);
+          console.log('Files is', files);
+        } else {
+          console.error('Failed to parse request', err)
+        }
+      });
     }
   });
 }
