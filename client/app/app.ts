@@ -134,7 +134,7 @@ async function subscribeForSNSMessages() {
       TopicArn: environment.snsTopicArn,
       Endpoint: `http://${environment.endpoint}:3000/sub`
     };
-    sns.subscribe(params, (err, data) => { if (err) reject(err); });
+    // sns.subscribe(params, (err, data) => { if (err) reject(err); });
   });
 }
 
