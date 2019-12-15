@@ -4,8 +4,7 @@ import path from 'path';
 import AWS from 'aws-sdk';
 import uuid from 'uuid/v4'
 import readline from 'readline'
-// @ts-ignore
-import ftp from 'ftp-client';
+import ftp from 'basic-ftp';
 import amqp from 'amqplib/callback_api';
 import * as https from 'https';
 
@@ -283,25 +282,14 @@ if (process.env.REQ === 'true') {
   app.post('/', async function (req, res) {
     const reqBody = req.body;
     console.log("Handle server request", reqBody);
-    let ip = req.ip.split(':')[3];
     if (reqBody.status) {
-      const client = new ftp({
-        host: ip,
-        port: 21,
-        user: 'ubuntu',
-        password: ''
-      });
-      console.log('Trying to connect to server');
+      console.log('Trying to connect to server via ftp');
+      const client = new ftp.Client();
       // TODO Think about port
       try {
+        await client.connect(req.ip.split(':')[3], 21);
         const wrappedFilename = wrapFilename(filename);
-        client.connect(() => {
-          client.download(wrappedFilename, wrappedFilename, {
-            overwrite: 'all'
-          }, function (result: any) {
-            console.log(result);
-          });
-        });
+        await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
         wantedFiles[reqUUID] = false;
       } catch (e) {
         console.error('Failed to get file from server', e);
