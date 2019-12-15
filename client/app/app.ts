@@ -285,6 +285,7 @@ if (process.env.REQ === 'true') {
     if (reqBody.status) {
       console.log('Trying to connect to server via ftp');
       let client = new ftp.Client(15000);
+      client.ftp.verbose = true;
       // TODO Think about port
       try {
         await client.access({
