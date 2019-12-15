@@ -137,7 +137,7 @@ app.get('/msg', async (req, res) => {
 // Handle subscription
 app.post('/sub', (req, res) => {
   // DEBUG
-  console.log(req.body);
+  console.log(JSON.parse(req.body));
 });
 
 // Listen requests
