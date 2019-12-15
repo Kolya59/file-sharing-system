@@ -4,7 +4,7 @@ import path from 'path';
 import AWS from 'aws-sdk';
 import uuid from 'uuid/v4'
 import readline from 'readline'
-import ftp from 'basic-ftp';
+import * as ftp from 'basic-ftp';
 import amqp from 'amqplib/callback_api';
 import * as https from 'https';
 
