@@ -287,7 +287,12 @@ if (process.env.REQ === 'true') {
       const client = new ftp.Client(15000);
       // TODO Think about port
       try {
-        await client.connect(req.ip.split(':')[3], 21);
+        await client.access({
+          host: req.ip.split(':')[3],
+          user: 'ubuntu',
+          password: '',
+          secure: false
+        });
         const wrappedFilename = wrapFilename(filename);
         await client.downloadTo(fs.createWriteStream(wrappedFilename), wrappedFilename);
         client.close();
