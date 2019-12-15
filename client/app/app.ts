@@ -24,6 +24,7 @@ const environment = {
 };
 
 const app: express.Application = express();
+app.use(express.json());
 // Get environment variable
 AWS.config.update({region: environment.snsRegion});
 const sns = new AWS.SNS({});
@@ -93,9 +94,10 @@ async function subscribeForSNSMessages() {
     // Handle subscription
     app.post('/sub', (req, res) => {
       // DEBUG
-      console.log(express.json(req.body));
+      let reqBody = req.body;
+      console.log(reqBody);
       const confirmationParams = {
-        Token: req.body.Token,
+        Token: reqBody,
         TopicArn: environment.snsTopicArn,
         AuthenticateOnUnsubscribe: 'false'
       };
