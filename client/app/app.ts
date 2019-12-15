@@ -101,9 +101,7 @@ async function subscribeForSNSMessages() {
       if (req.isConfirmation) {
         let reqBody = req.body;
         console.log('Handled confirmation request', reqBody);
-        http.get({
-          hostname: reqBody.SubscribeURL
-        }, (res) => {
+        http.get(reqBody.SubscribeURL, (res) => {
           resolve(res);
         });
       } else {
