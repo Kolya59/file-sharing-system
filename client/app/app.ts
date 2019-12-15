@@ -95,7 +95,7 @@ async function subscribeForSNSMessages() {
     app.post('/sub', (req, res) => {
       // DEBUG
       let reqBody = req.body;
-      console.log(reqBody, req);
+      console.log(reqBody, req.headers);
       const confirmationParams = {
         Token: reqBody.Token,
         TopicArn: environment.snsTopicArn,
