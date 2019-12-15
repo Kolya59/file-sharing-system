@@ -279,7 +279,7 @@ if (process.env.REQ === 'true') {
   } catch (e) {
     console.error('failed to connect to RabbitMQ', e);
   }
-  app.get('/', async function (req, res) {
+  app.post('/', async function (req, res) {
     const reqBody = req.body;
     console.log("Handle server request", reqBody);
     if (reqBody.status) {
